@@ -1,0 +1,22 @@
+{
+  "name": "gladiatorarenan",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Gladiatorarenan i 3D – elva krigare, exakt lika chans att vinna.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sounds": "node scripts/generate-sounds.mjs",
+    "fairness": "node scripts/fairness.mjs",
+    "test": "node scripts/fairness.mjs --check"
+  },
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Gladiatorarenan</title>
+  <meta name="description" content="Elva gladiatorer i en 3D-arena med riktig fysik. Alla har exakt lika stor chans att vinna.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700;800;900&family=Alegreya+Sans:wght@400;500;700;800&display=swap">
+</head>
+<body>
+  <header class="top"><div class="wrap">
+    <p class="eyebrow">Arenan · elva krigare</p>
+    <h1>Gladiatorarenan</h1>
+    <p class="sub">Välj vilka som kliver in på sanden och starta striden. Den som står kvar sist vinner.</p>
+  </div></header>
+
+  <main class="wrap">
+    <section class="stage" aria-label="Arenan">
+      <div class="arena-box" id="box">
+        <canvas id="arena" aria-label="Arenan i 3D där krigarna slåss. Dra för att vrida kameran, scrolla för att zooma."></canvas>
+        <div class="tags" id="tags" aria-hidden="true"></div>
+        <div class="loading" id="loading">Bygger arenan…</div>
+        <div class="hint-msg" id="hintMsg" hidden></div>
+        <div class="overlay" id="cdWrap" hidden><div class="countdown" id="cd"></div></div>
+        <div class="overlay win" id="winWrap" hidden>
+          <div class="banner" role="dialog" aria-label="Vinnare">
+            <img id="winPic" alt="" width="96" height="120">
+            <div>
+              <p class="lbl">Segrare</p>
+              <h3 id="winName">–</h3>
+              <p class="k" id="winKills"></p>
+              <div class="btns">
+                <button class="btn primary small" id="again" type="button">Kör igen</button>
+                <button class="btn small" id="newPick" type="button">Välj nya</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bar">
+        <button class="btn primary" id="start" type="button">Starta striden</button>
+        <button class="btn" id="shuffle" type="button">Lotta startplatser</button>
+        <button class="btn danger" id="abort" type="button" hidden>Avbryt matchen</button>
+        <div class="seg" role="group" aria-label="Hastighet">
+          <button type="button" data-s="1" aria-pressed="true">1×</button>
+          <button type="button" data-s="2" aria-pressed="false">2×</button>
+          <button type="button" data-s="3" aria-pressed="false">3×</button>
+        </div>
+        <label class="hpctl" for="hpRange">Liv <input type="range" id="hpRange" min="40" max="400" step="10" value="120"> <output id="hpOut" for="hpRange">120</output></label>
+        <label class="hpctl" for="arenaSel">Arena <select id="arenaSel"></select></label>
+        <button class="btn small sound" id="sound" type="button" aria-pressed="true">Ljud på</button>
+        <button class="btn small" id="fsBtn" type="button">Helskärm</button>
+        <span class="status" id="status"></span>
+      </div>
+      <ol class="log" id="log" aria-live="polite"></ol>
+    </section>
+
+    <section class="roster-sec" aria-label="Krigarna" id="rosterSec">
+      <div class="roster-head">
+        <h2>Krigarna</h2>
+        <div class="acts">
+          <button class="btn small" id="all" type="button">Välj alla</button>
+          <button class="btn small" id="none" type="button">Rensa</button>
+        </div>
+      </div>
+      <p class="note">Klicka på de krigare som ska vara med. Alla har exakt samma liv, styrka, fart och kroppsstorlek i fysiken. Vapen och rustning är bara utseende. Startplatserna lottas varje gång.</p>
+      <div class="roster" id="roster"></div>
+      <div class="custom-row"><label for="customName">Din egen krigare heter</label><input class="namefield" id="customName" type="text" maxlength="16" placeholder="Utmanaren" autocomplete="off"></div>
+    </section>
+
+    <section class="extras" aria-label="Rättvisetest">
+      <div class="panel">
+        <div class="ph">
+          <h2>Rättvisetest</h2>
+          <div class="fairacts"><button class="btn small" id="fairRun" type="button">Kör 1000 teststrider</button></div>
+        </div>
+        <p class="hint" id="fairIntro">Testar de krigare du har valt, eller alla elva om färre än två är valda. Datorn spelar 1000 osynliga strider i bakgrunden med exakt samma regelfil som den riktiga matchen och räknar vem som vinner. Är det rättvist hamnar alla nära strecket i mitten, som visar rättvis andel.</p>
+        <div class="prog" id="fairProg" hidden><i></i></div>
+        <p class="hint" id="fairMeta"></p>
+        <ol class="fairlist" id="fairList"></ol>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
