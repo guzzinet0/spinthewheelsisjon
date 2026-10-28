@@ -9,28 +9,32 @@ export const THEMES = {
     sun: "#fff0d2", sunI: 2.5, sunPos: [-14, 24, 10], hemi: ["#cfe0f4", "#8a6a45"], hemiI: 0.95, env: 0.55, exposure: 0.92,
     sand: ["#e4c48c", "#d0a86c", "#a8814c"], speck: ["rgba(120,80,40,.22)", "rgba(255,244,215,.3)"], rake: "rgba(130,90,45,.16)",
     stone: ["#b39a78", "#9d8463"], archDark: "#3b2b1e", wall: "#8a2a1f", stud: "#d9a63a", crowd: 1,
-    torches: 4, torchI: 4, stars: false, snow: false, cloth: ["#7a2a22", "#2f4f7a", "#6b5a2b", "#3d6b46", "#5a3a6b", "#8a6b3a", "#e8e0cc", "#7a4a22"]
+    torches: 4, torchI: 4, stars: false, snow: false, cloth: ["#7a2a22", "#2f4f7a", "#6b5a2b", "#3d6b46", "#5a3a6b", "#8a6b3a", "#e8e0cc", "#7a4a22"],
+    look: { bloom: 0.35, threshold: 2.6, vignette: 0.3, sat: 1.06 }
   },
   sunset: {
     label: "Solnedgång", sky: ["#241a40", "#7a3a6a", "#e0704a", "#ffc27a"], fog: "#c87a5a", fogDensity: 0.012,
     sun: "#ffa060", sunI: 2.8, sunPos: [-22, 7, -8], hemi: ["#f4a888", "#4a2a20"], hemiI: 0.8, env: 0.4, exposure: 1.05,
     sand: ["#f6c88f", "#e39d5f", "#a85f35"], speck: ["rgba(140,60,30,.22)", "rgba(255,225,190,.28)"], rake: "rgba(140,70,35,.18)",
     stone: ["#9c6e55", "#865a44"], archDark: "#2a1610", wall: "#8a2a1a", stud: "#f0b04a", crowd: 0.95,
-    torches: 6, torchI: 10, stars: false, snow: false, cloth: ["#7a2a22", "#2f4f7a", "#6b5a2b", "#3d6b46", "#5a3a6b", "#8a6b3a", "#e8e0cc", "#7a4a22"]
+    torches: 6, torchI: 10, stars: false, snow: false, cloth: ["#7a2a22", "#2f4f7a", "#6b5a2b", "#3d6b46", "#5a3a6b", "#8a6b3a", "#e8e0cc", "#7a4a22"],
+    look: { bloom: 0.5, threshold: 2.2, vignette: 0.4, sat: 1.1 }
   },
   night: {
     label: "Natt", sky: ["#01030a", "#06102a", "#122244", "#1c2c48"], fog: "#0a1222", fogDensity: 0.016,
     sun: "#93a8ff", sunI: 0.7, sunPos: [12, 22, -10], hemi: ["#5868a8", "#1a140e"], hemiI: 0.35, env: 0.18, exposure: 1.15,
     sand: ["#d8ccb0", "#b7a789", "#7c6d52"], speck: ["rgba(70,60,40,.22)", "rgba(255,245,220,.15)"], rake: "rgba(70,60,40,.18)",
     stone: ["#4a4a55", "#3d3d48"], archDark: "#0a0a12", wall: "#4a1a2a", stud: "#c9a24a", crowd: 0.8,
-    torches: 8, torchI: 22, stars: true, snow: false, cloth: ["#5a2a22", "#2a3f6a", "#4b4a2b", "#2d4b36", "#4a2a5b", "#6a5b3a", "#a8a090", "#5a3a22"]
+    torches: 8, torchI: 22, stars: true, snow: false, cloth: ["#5a2a22", "#2a3f6a", "#4b4a2b", "#2d4b36", "#4a2a5b", "#6a5b3a", "#a8a090", "#5a3a22"],
+    look: { bloom: 0.8, threshold: 1.1, vignette: 0.5, sat: 1.05 }
   },
   winter: {
     label: "Vinter", sky: ["#5d6d84", "#93a3b8", "#c7d1dd", "#e6ebf1"], fog: "#c8d2de", fogDensity: 0.022,
     sun: "#eef2ff", sunI: 1.4, sunPos: [-10, 20, 14], hemi: ["#e0eaf6", "#8090a0"], hemiI: 1.25, env: 0.5, exposure: 1.0,
     sand: ["#f2f5f9", "#dde4ee", "#b4c2d2"], speck: ["rgba(140,160,195,.25)", "rgba(255,255,255,.8)"], rake: "rgba(120,150,190,.2)",
     stone: ["#7a828f", "#6a7280"], archDark: "#2a303a", wall: "#2f4f7a", stud: "#dfe8f2", crowd: 1,
-    torches: 4, torchI: 6, stars: false, snow: true, cloth: ["#7a2a22", "#2f4f7a", "#3d6b46", "#5a3a6b", "#eae6dd", "#8a6b3a", "#2a2a30"]
+    torches: 4, torchI: 6, stars: false, snow: true, cloth: ["#7a2a22", "#2f4f7a", "#3d6b46", "#5a3a6b", "#eae6dd", "#8a6b3a", "#2a2a30"],
+    look: { bloom: 0.3, threshold: 2.8, vignette: 0.28, sat: 1.0 }
   }
 };
 Object.entries(THEMES).forEach(([k, t]) => { t.key = k; });
@@ -78,6 +82,7 @@ export class Arena {
 
     this.structure = new THREE.Group(); scene.add(this.structure);
     this.torches = [];
+    this.cheers = [];
     this.excite = 0.1;
   }
 
@@ -148,12 +153,25 @@ export class Arena {
     const N = seats.length;
     const bodies = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.17, 0.28, 3, 8), new THREE.MeshStandardMaterial({ roughness: 0.9 }), N);
     const heads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11, 10, 8), new THREE.MeshStandardMaterial({ roughness: 0.7 }), N);
+    /* arms hang from the shoulder pivot, so the geometry is shifted to point down from its origin */
+    const armGeo = new THREE.CapsuleGeometry(0.045, 0.26, 2, 6); armGeo.translate(0, -0.15, 0);
+    const arms = new THREE.InstancedMesh(armGeo, new THREE.MeshStandardMaterial({ roughness: 0.8 }), N * 2);
+    const flagGeo = new THREE.PlaneGeometry(0.26, 0.18); flagGeo.translate(0.13, -0.38, 0);
+    const flags = new THREE.InstancedMesh(flagGeo, new THREE.MeshStandardMaterial({ roughness: 0.9, side: THREE.DoubleSide }), N);
     const skins = ["#e3a978", "#c98d62", "#8f5a38", "#f0c4a0", "#a86b44", "#d9a27c"].map(c => new THREE.Color(c)), cloth = th.cloth.map(c => new THREE.Color(c));
-    seats.forEach((s, i) => { bodies.setColorAt(i, cloth[(rnd() * cloth.length) | 0]); heads.setColorAt(i, skins[(rnd() * skins.length) | 0]); });
-    bodies.castShadow = false; bodies.receiveShadow = true; heads.receiveShadow = true;
-    g.add(bodies, heads);
-    this.crowd = { seats, bodies, heads };
-    this.updateCrowd(0, true);
+    const flagCols = cloth.concat(["#e8b84a", "#f4e7cf", "#c0392b"].map(c => new THREE.Color(c)));
+    seats.forEach((s, i) => {
+      const skin = skins[(rnd() * skins.length) | 0];
+      bodies.setColorAt(i, cloth[(rnd() * cloth.length) | 0]); heads.setColorAt(i, skin);
+      arms.setColorAt(i * 2, skin); arms.setColorAt(i * 2 + 1, skin);
+      flags.setColorAt(i, flagCols[(rnd() * flagCols.length) | 0]);
+      s.flag = rnd() < 0.3; s.stand = 0; s.lazy = 0.4 + rnd() * 0.6; s.wave = 6 + rnd() * 5;
+    });
+    for (const m of [bodies, heads, arms, flags]) { m.receiveShadow = true; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); }
+    g.add(bodies, heads, arms, flags);
+    this.crowd = { seats, bodies, heads, arms, flags };
+    this.cheers = [];
+    this.updateCrowd(0, 0, true);
 
     /* torches on the podium */
     const tm = new THREE.MeshStandardMaterial({ color: "#3a2618", roughness: 0.9 }), bowl = new THREE.MeshStandardMaterial({ color: "#6b4a2b", metalness: 0.6, roughness: 0.5 });
@@ -178,22 +196,62 @@ export class Arena {
     this.scene.add(this.snow);
   }
 
-  updateCrowd(t, force) {
-    const { seats, bodies, heads } = this.crowd, ex = this.excite, m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3();
-    if (!force && ex < 0.02) return;
+  /** The stands nearest (x, z) jump up first and the cheer rolls around the ring. strength 1 = everybody, for a long while. */
+  cheer(x, z, strength = 0.7, hold = 2.2) {
+    this.cheers.push({ a: Math.atan2(x, z), r: Math.hypot(x, z), k: strength, hold, t: 0 });
+  }
+  /** A random spot among the front rows, for throwing things into the arena. */
+  seatPos(out = new THREE.Vector3()) {
+    const front = this.crowd.seats.filter(s => s.y < PODIUM_H + TIER_H * 4);
+    const s = front[(Math.random() * front.length) | 0];
+    return out.set(Math.sin(s.a) * s.r, s.y + 1.1, Math.cos(s.a) * s.r);
+  }
+
+  updateCrowd(t, dt, force) {
+    const { seats, bodies, heads, arms, flags } = this.crowd, ex = this.excite;
+    for (const c of this.cheers) c.t += dt;
+    this.cheers = this.cheers.filter(c => c.t < c.hold + 4);
+    if (!force && ex < 0.02 && !this.cheers.length && !this.anyStanding) return;
+    const m = this.m4 || (this.m4 = new THREE.Matrix4()), q = new THREE.Quaternion(), qa = new THREE.Quaternion(), s = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(), Z = new THREE.Vector3(0, 0, 1);
+    const s0 = new THREE.Vector3(0, 0, 0), side = new THREE.Vector3();
+    let standing = false;
     for (let i = 0; i < seats.length; i++) {
-      const st = seats[i], jump = Math.max(0, Math.sin(t * (5 + st.amp * 3) + st.ph)) * ex * 0.22 * st.amp;
-      const x = Math.sin(st.a) * st.r, z = Math.cos(st.a) * st.r;
+      const st = seats[i];
+      let want = 0;
+      for (const c of this.cheers) {
+        let d = Math.abs(st.a - c.a) % (Math.PI * 2); if (d > Math.PI) d = Math.PI * 2 - d;
+        const reach = c.k >= 1 ? Math.PI : 0.6 + c.k * 1.4;
+        if (d > reach) continue;
+        const local = c.t - d / 2.2 - (st.r - WALL_R) * 0.03;
+        if (local < 0 || local > c.hold * st.lazy + 0.6) continue;
+        want = Math.max(want, c.k * (1 - d / reach * 0.6));
+      }
+      want = Math.min(1, want * (0.6 + st.lazy * 0.6));
+      st.stand += (want - st.stand) * Math.min(1, dt * (want > st.stand ? 7 : 2.5));
+      if (st.stand > 0.01) standing = true;
+      const up = st.stand, jump = Math.max(0, Math.sin(t * (5 + st.amp * 3) + st.ph)) * (ex * 0.22 + up * 0.12) * st.amp;
+      const x = Math.sin(st.a) * st.r, z = Math.cos(st.a) * st.r, y = st.y + up * 0.22 + jump;
       q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, st.a + Math.PI);
-      m.compose(p.set(x, st.y + 0.35 + jump, z), q, s); bodies.setMatrixAt(i, m);
-      m.compose(p.set(x, st.y + 0.78 + jump, z), q, s); heads.setMatrixAt(i, m);
+      m.compose(p.set(x, y + 0.35, z), q, s); bodies.setMatrixAt(i, m);
+      m.compose(p.set(x, y + 0.78, z), q, s); heads.setMatrixAt(i, m);
+      /* arms: hang down while seated, go up and wave while standing */
+      side.set(1, 0, 0).applyQuaternion(q);
+      for (let k = 0; k < 2; k++) {
+        const sgn = k ? -1 : 1, wave = Math.sin(t * st.wave + st.ph + k * 1.7) * 0.45 * up;
+        const ang = sgn * (0.18 + up * (2.55 + (st.flag && k === 0 ? 0.2 : 0)) + wave);
+        qa.setFromAxisAngle(Z, ang); qa.premultiply(q);
+        p.set(x, y + 0.56, z).addScaledVector(side, sgn * 0.2);
+        m.compose(p, qa, s); arms.setMatrixAt(i * 2 + k, m);
+        if (k === 0) { m.compose(p, qa, st.flag && up > 0.15 ? s : s0); flags.setMatrixAt(i, m); }
+      }
     }
-    bodies.instanceMatrix.needsUpdate = true; heads.instanceMatrix.needsUpdate = true;
+    this.anyStanding = standing;
+    for (const im of [bodies, heads, arms, flags]) im.instanceMatrix.needsUpdate = true;
   }
 
   /** fire: { on, radius, grow } ; flames: additive particle system */
   update(dt, t, fire, flames) {
-    this.updateCrowd(t);
+    this.updateCrowd(t, dt);
     for (const tc of this.torches) {
       tc.light.intensity = tc.base * (0.85 + Math.sin(t * 13 + tc.ph) * 0.08 + Math.sin(t * 7.3 + tc.ph * 2) * 0.07);
       if (Math.random() < dt * 30) flames.spawn({ x: tc.x + (Math.random() - 0.5) * 0.15, y: tc.y, z: tc.z + (Math.random() - 0.5) * 0.15, vy: 0.9 + Math.random() * 0.5, life: 0.45, size: 0.55, grow: -0.6, color: "#ffb050" });

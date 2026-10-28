@@ -10,6 +10,8 @@ import { Particles, Lightning } from "./render/effects.js";
 import { Overlay } from "./render/overlay.js";
 import { buildLion, buildChariot, disposeCreature } from "./render/creatures.js";
 import { renderPortraits } from "./render/portraits.js";
+import { Post } from "./render/post.js";
+import { Celebration } from "./render/celebration.js";
 import { tex } from "./render/textures.js";
 import { SFX } from "./audio/sfx.js";
 import { initFairness } from "./ui/fairness.js";
@@ -27,7 +29,7 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.
 const canvas = $("arena"), box = $("box");
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
 } catch (e) {
   $("loading").textContent = "Din webbläsare kan inte visa 3D-grafik (WebGL saknas).";
   throw e;
@@ -47,6 +49,8 @@ const glow = new Particles(scene, { max: 2500, additive: true });
 const flames = new Particles(scene, { max: 3500, additive: true, map: tex.flame() });
 const lightning = new Lightning(scene);
 const overlay = new Overlay($("tags"));
+const post = new Post(renderer, scene, camera);
+const party = new Celebration(scene);
 const spot = new THREE.SpotLight("#fff2c8", 0, 40, 0.42, 0.6, 1.2); spot.position.set(0, 16, 0); scene.add(spot, spot.target);
 const strikeLight = new THREE.PointLight("#bcd2ff", 0, 30, 1.5); scene.add(strikeLight);
 
@@ -153,6 +157,7 @@ function onEvent(type, d) {
       glow.burst(p.x, p.y, p.z, 6, { color: "#fff0c0", speed: 3.5, grav: 6, life: 0.25, size: 0.06 });
       overlay.float(chest(d.t, 2.05), d.crit ? `KRITISK! ${d.dmg}` : String(d.dmg), d.crit ? "crit" : "");
       shake = Math.max(shake, d.crit ? 0.22 : 0.08); hitstop = d.crit ? 0.09 : 0.04;
+      if (d.crit) post.flash(0.5);
       SFX.play(d.crit ? "hit_crit" : "hit", { pan: panOf(d.t.x, d.t.z) });
       if (d.crit) SFX.play("gasp", { vol: 0.35 });
       break;
@@ -161,6 +166,8 @@ function onEvent(type, d) {
     case "win": {
       phase = "over"; overT = 0;
       const V = views.get(d.w.id); V.st.celebrate = true; V.st.victory = (Math.random() * 3) | 0;
+      arena.cheer(d.w.x, d.w.z, 1, 7);
+      party.start(arena.theme.cloth, () => arena.seatPos(), new THREE.Vector3(d.w.x, 0, d.w.z));
       log(`<span class="skull" style="color:var(--gold)">★</span> <span><b>${esc(nameOf(ROSTER[d.w.id]))}</b> vinner arenan</span>`);
       $("status").textContent = nameOf(ROSTER[d.w.id]) + " vann!";
       $("abort").hidden = true;
@@ -227,6 +234,7 @@ function fallDown({ t, f, cause, ux, uz }) {
   slowmo = left <= 1 ? 1.6 : 0.45; shake = Math.max(shake, 0.25); hitstop = 0.12;
   SFX.play("fall", { pan: panOf(t.x, t.z) }); SFX.play("cheer", { vol: left <= 1 ? 0.9 : 0.55, delay: 0.15 });
   arena.excite = Math.min(1, arena.excite + 0.5);
+  if (left > 1) arena.cheer(t.x, t.z, 0.75, 2.4);
 }
 function ragdollView(V, vel, kick) {
   const v = V.view;
@@ -252,7 +260,7 @@ function strike(f) {
   glow.burst(f.x, 1.4, f.z, 30, { color: "#dfe9ff", speed: 5, grav: 4, life: 0.4, size: 0.08 });
   for (let i = 0; i < 10; i++) dust.spawn({ x: f.x + rnd(-0.3, 0.3), y: rnd(0.4, 1.6), z: f.z + rnd(-0.3, 0.3), vy: rnd(0.4, 0.9), life: rnd(1.4, 2.4), size: 0.4, grow: 0.6, color: "#46464b", drag: 0.5 });
   overlay.removeLabel(f.id);
-  shake = 0.3; SFX.play("thunder", { pan: panOf(f.x, f.z) });
+  shake = 0.3; post.flash(1); SFX.play("thunder", { pan: panOf(f.x, f.z) });
 }
 function abortFight() {
   if (phase !== "countdown" && phase !== "fight") return;
@@ -301,7 +309,6 @@ function frame(now) {
   if (phase === "abort") updateAbort(real);
   if (phase === "over") {
     overT += real;
-    if (overT < 4 && Math.random() < 0.5) for (let i = 0; i < 3; i++) dust.spawn({ x: rnd(-7, 7), y: rnd(6, 9), z: rnd(-7, 7), vx: rnd(-0.3, 0.3), vy: rnd(-1.2, -0.7), life: 7, size: 0.09, sway: 1.2, color: ["#c0392b", "#e05a4a", "#ebb94a", "#f4e7cf"][(Math.random() * 4) | 0] });
     if (overT > 1.6 && $("winWrap").hidden) showWinner();
   }
   const alpha = clamp(acc / DT, 0, 1);
@@ -348,14 +355,14 @@ function frame(now) {
   const wantSpot = (phase === "fight" && sim.finalMode && sim.fighters.length > 2) || (phase === "over" && overT < 2.5 && sim.fighters.length > 2);
   finalK += ((wantSpot ? 1 : 0) - finalK) * Math.min(1, real * 2);
   if (left.length) { let mx = 0, mz = 0; for (const f of left) { mx += f.x; mz += f.z; } mx /= left.length; mz /= left.length; spot.target.position.set(mx, 0, mz); spot.position.set(mx * 0.6, 15, mz * 0.6 + 3); }
-  spot.intensity = 900 * finalK;
+  spot.intensity = 900 * finalK; post.spot = finalK;
   arena.sun.intensity = arena.theme.sunI * (1 - 0.7 * finalK); arena.hemi.intensity = arena.theme.hemiI * (1 - 0.6 * finalK);
   for (const tc of arena.torches) tc.light.intensity *= 1 - 0.5 * finalK;
   flashA = Math.max(0, flashA - real * 3); strikeLight.intensity *= Math.exp(-real * 7);
   if (flashA > 0) { arena.hemi.intensity += flashA * 3; }
   arena.excite = Math.max(phase === "over" ? 0.6 : phase === "fight" ? 0.15 + (sim.finalMode ? 0.25 : 0) : 0.03, arena.excite - real * 0.25);
 
-  dust.update(real, T); glow.update(real, T); flames.update(real, T); lightning.update(real);
+  dust.update(real, T); glow.update(real, T); flames.update(real, T); lightning.update(real); party.update(real, T);
 
   /* sound beds */
   let crowd = 0.12;
@@ -375,7 +382,7 @@ function frame(now) {
     overlay.setLabel(f.id, { name: nameOf(ROSTER[f.id]), pos: pv.set(p.x, y, p.z), pct: clamp(f.hp / sim.hp, 0, 1), rage: f.rage, win: sim.winner === f, show: phase !== "abort" }, camera, lastW, lastH);
   }
   overlay.update(real, camera, lastW, lastH);
-  renderer.render(scene, camera);
+  post.render(real, T);
 
   cardTick -= real; if (cardTick <= 0) { cardTick = 0.2; syncCards(); }
   requestAnimationFrame(frame);
@@ -384,7 +391,7 @@ function resize() {
   const w = box.clientWidth, h = box.clientHeight;
   if (w === lastW && h === lastH) return;
   lastW = w; lastH = h;
-  renderer.setSize(w, h, false);
+  renderer.setSize(w, h, false); post.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
   const s = h * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * Math.PI / 360));
   for (const p of [dust, glow, flames]) p.mat.uniforms.uScale.value = s;
@@ -453,7 +460,7 @@ function refreshSetup() {
   refreshUi();
 }
 function resetMatchVisuals() {
-  physics.clear(); overlay.clearFloats();
+  physics.clear(); overlay.clearFloats(); party.clear(); arena.cheers = [];
   if (creature) { disposeCreature(creature); creature = null; }
   slowmo = 0; hitstop = 0; finalK = 0; overT = 0;
   $("winWrap").hidden = true; $("cdWrap").hidden = true;
@@ -523,7 +530,7 @@ document.addEventListener("pointerdown", () => SFX.init(), { once: true });
 arenaSel.innerHTML = Object.entries(THEMES).map(([k, t]) => `<option value="${k}">${t.label}</option>`).join("");
 function setTheme(key) {
   if (!THEMES[key]) key = "sol";
-  arena.setTheme(key); arenaSel.value = key;
+  arena.setTheme(key); post.setLook(arena.theme.look); arenaSel.value = key;
   try { localStorage.setItem("arena-theme", key); } catch (e) { /* ignore */ }
 }
 arenaSel.addEventListener("change", () => setTheme(arenaSel.value));
@@ -563,4 +570,4 @@ setTimeout(() => {
 }, 50);
 
 /* handy for poking at the game from the console */
-window.arena = { sim, views, scene, camera, cam, HP_DEFAULT };
+window.arena = { sim, views, scene, camera, cam, post, HP_DEFAULT };
